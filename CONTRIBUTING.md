@@ -18,7 +18,7 @@ Make sure the TypeScript compiler is running. Run `npm run build` before testing
 
 ### Adding new phrases
 
-Modify the `PhraseCorrections.csv` file, and alphabetize each section you change after finishing. I recommend [Alphabetical Sorter](https://marketplace.visualstudio.com/items?itemName=ue.alphabetical-sorter) if using VSCode.
+Modify the [`PhraseCorrections.csv`](PhraseCorrections.csv) file, and alphabetize each section you change after finishing. I recommend [Alphabetical Sorter](https://marketplace.visualstudio.com/items?itemName=ue.alphabetical-sorter) if using VSCode.
 
 ## Running
 
