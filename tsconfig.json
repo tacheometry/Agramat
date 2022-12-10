@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"strict": true,
+		"allowSyntheticDefaultImports": true,
+		"module": "CommonJS",
+		"moduleResolution": "node",
+		"typeRoots": ["node_modules/@types"],
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"outDir": "./out",
+		"rootDir": "./src",
+		"baseUrl": "./src",
+		"incremental": true,
+		"target": "ESNext",
+		"tsBuildInfoFile": "out/tsconfig.tsbuildinfo"
+	},
+	"exclude": ["node_modules"]
+}

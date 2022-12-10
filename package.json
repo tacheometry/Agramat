@@ -1,0 +1,32 @@
+{
+	"name": "agramat",
+	"version": "1.0.0",
+	"description": "",
+	"main": "out/index.js",
+	"scripts": {
+		"build": "tsc",
+		"watch": "tsc -w",
+		"start": "node .",
+		"register": "node out/registerCommands.js"
+	},
+	"author": "tacheometry",
+	"license": "MIT",
+	"dependencies": {
+		"@discordjs/builders": "^1.4.0",
+		"@discordjs/rest": "^1.4.0",
+		"axios": "^1.2.1",
+		"cheerio": "^1.0.0-rc.12",
+		"csv-parse": "^5.3.3",
+		"discord-api-types": "^0.37.21",
+		"discord.js": "^14.7.1",
+		"dotenv": "^16.0.3",
+		"latinize": "^0.5.0"
+	},
+	"devDependencies": {
+		"@types/latinize": "^0.2.15",
+		"@types/node": "^18.6.2",
+		"prettier": "^2.7.1",
+		"typescript": "^4.9.3"
+	},
+	"private": true
+}
