@@ -12,6 +12,16 @@ npm i
 
 Create an `.env` file after the template in [`.env.template`](.env.template) and add Discord tokens and other values accordingly.
 
+### Registering slash commands
+
+Every time the slash command definitions in [registerCommands.ts](src/registerCommands.ts) are changed, the following command must be run:
+
+```sh
+npm run register
+```
+
+Make sure the source is compiled before doing so.
+
 ## Making changes
 
 Make sure the TypeScript compiler is running. Run `npm run build` before testing each change, or have `npm run watch` running in the background.
