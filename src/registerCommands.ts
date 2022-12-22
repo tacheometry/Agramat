@@ -1,3 +1,7 @@
+import { REST, Routes, SlashCommandBuilder } from "discord.js";
+import * as dotenv from "dotenv";
+dotenv.config();
+
 const COMMAND_DEFINITIONS = [
 	new SlashCommandBuilder()
 		.setName("conjugare")
@@ -10,12 +14,12 @@ const COMMAND_DEFINITIONS = [
 				.setMinLength(2)
 				.setMaxLength(10)
 		),
+	new SlashCommandBuilder()
+		.setName("despre")
+		.setDescription(
+			"Citește despre atitudinea, și limitările robotului față de corecturi în mediul online."
+		),
 ];
-
-import * as dotenv from "dotenv";
-dotenv.config();
-
-import { REST, Routes, SlashCommandBuilder } from "discord.js";
 
 const rest = new REST({ version: "10" }).setToken(
 	process.env.DISCORD_TOKEN as string

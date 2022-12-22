@@ -139,6 +139,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
 				else interaction.reply(message);
 				break;
 			}
+			case "despre": {
+				interaction.reply({
+					ephemeral: true,
+					embeds: [
+						new EmbedBuilder()
+							.setTitle(
+								"Corectez greșeli comune de ortografie din limba română!"
+							)
+							.setDescription(
+								"Totuși, **nu** sunt un spellchecker generalizat. **Caut să corectez numai secvențele care sunt greșite 100% din timp**, și care nu sunt neintenționate.\n\nDe exemplu, `vroiam` și `genoflexiune` sunt aproape mereu scrise în acest fel din cauza obișnuinței autorilor care nu cunosc forma de dicționar a cuvintelor – acest lucru ar trebui corectat.\n\nPrin urmare, o secvență cum ar fi `buna zriua` nu ar trebui corectată, deoarece este evident o greșeală din cauza tastaturii. Nici diacriticele sau punctuația nu ar trebui adăugate atunci când forma de bază a secvențelor este corectă ([video](https://youtu.be/fS4X1JfX6_Q)).\n\nÎn plus, o secvență cum ar fi `lam` are forma corectă `l-am`, dar ar trebui acceptată și forma `l am`, având încredere că autorii cunosc că scrierea corectă este cu cratimă.\n\nToate corecturile sunt introduse manual. Astfel, inerent, **pot să corectez numai secvențe greșite frecvente, introduse de voluntari**, și nu voi putea detecta fiecare greșeală.\n\nDacă vezi că am corectat greșit, sau dacă vrei să adaugi o secvență, am codul [pe GitHub](https://github.com/tacheometry/Agramat) unde poți contribui printr-un Issue sau Pull Request!"
+							)
+							.setFooter({
+								text: "*Acest lucru ar putea fi realizat cu un grad de succes ridicat prin implementarea unui analizator de limbaj natural, dar realizarea acestei metodologii ar lua multă muncă și accesul la multe date relevante",
+							})
+							.setColor("Random"),
+					],
+				});
+
+				break;
+			}
 		}
 	}
 });
