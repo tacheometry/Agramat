@@ -5,7 +5,7 @@ import {
 	EmbedBuilder,
 	InteractionReplyOptions,
 } from "discord.js";
-import { ConjugationInfo } from "./conjugareScraper";
+import { ConjugationInfo } from "./conjugationScraper";
 
 export default (
 	verb: string,

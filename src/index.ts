@@ -12,7 +12,7 @@ import {
 	GatewayIntentBits,
 } from "discord.js";
 import normalizeVerb from "./normalizeVerb";
-import { CONJUGATION_CACHE, fetchConjugare } from "./conjugareScraper";
+import { CONJUGATION_CACHE, fetchConjugation } from "./conjugationScraper";
 import makeVerbMessage from "./makeVerbMessage";
 import correctText, { CorrectionInfo } from "./correctText";
 import casualSpeech from "./casualSpeech";
@@ -123,7 +123,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 				if (info === undefined) {
 					await interaction.deferReply();
 					deferred = true;
-					await fetchConjugare(verb).catch((e) => {
+					await fetchConjugation(verb).catch((e) => {
 						interaction.editReply({
 							content: "Am dat de o eroare! Încearcă mai târziu.",
 						});

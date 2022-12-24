@@ -7,7 +7,7 @@ export type ConjugationInfo = [string, string[]][];
 
 export const CONJUGATION_CACHE: Record<string, ConjugationInfo | null> = {};
 
-export const fetchConjugare = async (verb: string) => {
+export const fetchConjugation = async (verb: string) => {
 	verb = normalizeVerb(verb);
 
 	const { data: html } = await axios.get(
