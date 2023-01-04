@@ -86,20 +86,26 @@ client.on(Events.MessageCreate, (message) => {
 		.setColor("Random");
 
 	const includeUnsureWarnings = new Set<UnsureType>();
-	let correctionsExtraText = correctionInfo.correctionsMade
-		.map((c) => {
-			if (c.unsure) includeUnsureWarnings.add(c.unsure);
+	let correctionsChangesList: Record<string, number> = {};
+	correctionInfo.correctionsMade.forEach((c) => {
+		if (c.unsure) includeUnsureWarnings.add(c.unsure);
 
-			return `${c.correctionSource.wrongForm} ➔ ${romanianEnumeration(
-				c.correctionSource.correctForms
-			)}${c.unsure ? "*" : ""}`;
-		})
-		.join("\n");
+		const text = `${c.correctionSource.wrongForm} ➔ ${romanianEnumeration(
+			c.correctionSource.correctForms
+		)}${c.unsure ? "*" : ""}`;
+		correctionsChangesList[text] ??= 0;
+		correctionsChangesList[text]!++;
+	});
 
 	if (content.length > 40 || includeUnsureWarnings.size > 0)
 		embed.addFields({
 			name: justOneCorrection ? "Corectură" : "Corecturi",
-			value: correctionsExtraText,
+			value: Object.entries(correctionsChangesList)
+				.map(([k, v]) => {
+					if (v === 1) return k;
+					else return `${k} (x${v})`;
+				})
+				.join("\n"),
 		});
 
 	if (includeUnsureWarnings.size > 0)
