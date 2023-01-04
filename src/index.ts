@@ -96,10 +96,11 @@ client.on(Events.MessageCreate, (message) => {
 		})
 		.join("\n");
 
-	embed.addFields({
-		name: justOneCorrection ? "Corectură" : "Corecturi",
-		value: correctionsExtraText,
-	});
+	if (content.length > 40 || includeUnsureWarnings.size > 0)
+		embed.addFields({
+			name: justOneCorrection ? "Corectură" : "Corecturi",
+			value: correctionsExtraText,
+		});
 
 	if (includeUnsureWarnings.size > 0)
 		embed.setFooter({
