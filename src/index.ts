@@ -17,8 +17,11 @@ import {
 	fetchConjugation,
 } from "./scrapers/conjugationScraper";
 import makeVerbMessage from "./makeVerbMessage";
-import correctText, { CorrectionInfo } from "./correctText";
-import casualSpeech from "./casualSpeech";
+import correctText, {
+	UnsureType,
+	WholeMessageCorrectionInfo,
+} from "./correctText";
+import romanianEnumeration from "./romanianEnumeration";
 
 const client = new Client({
 	intents: [
@@ -32,7 +35,7 @@ enum INTERACTION_CUSTOM_ID {
 	CORRECTION_ACKNOWLEDGE = "correction_acknowledge",
 }
 
-const CORRECTION_CACHE: Record<string, CorrectionInfo> = {};
+const CORRECTION_CACHE: Record<string, WholeMessageCorrectionInfo> = {};
 
 client.once(Events.ClientReady, (c) => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
@@ -47,14 +50,16 @@ client.on(Events.MessageCreate, (message) => {
 	if (message.author.bot) return;
 
 	const { content } = message;
-	const casualContent = casualSpeech(content);
+	const lowerContent = content.toLowerCase();
 
-	let correctionInfo = CORRECTION_CACHE[casualContent];
+	let correctionInfo = CORRECTION_CACHE[lowerContent];
 	if (!correctionInfo) {
 		correctionInfo = correctText(content);
-		CORRECTION_CACHE[casualContent] = correctionInfo;
+		CORRECTION_CACHE[lowerContent] = correctionInfo;
 	}
-	if (correctionInfo.correctionsMade === 0) return;
+	if (correctionInfo.correctionsMade.length === 0) return;
+
+	const justOneCorrection = correctionInfo.correctionsMade.length === 1;
 
 	const row = new ActionRowBuilder().addComponents(
 		new ButtonBuilder()
@@ -67,26 +72,45 @@ client.on(Events.MessageCreate, (message) => {
 			.setStyle(ButtonStyle.Primary)
 	);
 
+	const embed = new EmbedBuilder()
+		.addFields(
+			{
+				name: "Greșit",
+				value: correctionInfo.strikedText,
+			},
+			{
+				name: "Corect",
+				value: correctionInfo.correctText,
+			}
+		)
+		.setColor("Random");
+
+	const includeUnsureWarnings = new Set<UnsureType>();
+	let correctionsExtraText = correctionInfo.correctionsMade
+		.map((c) => {
+			if (c.unsure) includeUnsureWarnings.add(c.unsure);
+
+			return `${c.correctionSource.wrongForm} ➔ ${romanianEnumeration(
+				c.correctionSource.correctForms
+			)}${c.unsure ? "*" : ""}`;
+		})
+		.join("\n");
+
+	embed.addFields({
+		name: justOneCorrection ? "Corectură" : "Corecturi",
+		value: correctionsExtraText,
+	});
+
+	if (includeUnsureWarnings.size > 0)
+		embed.setFooter({
+			text: [...includeUnsureWarnings.values()].join("\n"),
+		});
+
 	message.reply({
 		content: `Psst🗯️Am găsit ${
-			correctionInfo.correctionsMade === 1
-				? "o greșeală"
-				: "mai multe greșeli"
+			justOneCorrection ? "o greșeală" : "mai multe greșeli"
 		} în textul tău! Vezi dacă am dreptate:`,
-		embeds: [
-			new EmbedBuilder()
-				.addFields(
-					{
-						name: "Greșit",
-						value: correctionInfo.strikedText,
-					},
-					{
-						name: "Corect",
-						value: correctionInfo.correctText,
-					}
-				)
-				.setColor("Random"),
-		],
+		embeds: [embed],
 		components: [row as never],
 	});
 });

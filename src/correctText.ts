@@ -1,85 +1,167 @@
+import removeCharactersFromPosition from "./removeCharactersFromPosition";
 import capitalizeFirst from "./capitalizeFirst";
 import casualSpeech from "./casualSpeech";
-import { ALL_CORRECTIONS_REGEX, CORRECTIONS } from "./correctionData";
+import {
+	ALL_CORRECTIONS_REGEX,
+	ALL_CORRECTIONS_CASUAL_KEYS,
+	Correction,
+	CorrectionKind,
+	SENTENCE_ENDING_CHARACTERS,
+	PUNCTUATION_CHARACTERS,
+} from "./correctionData";
 import insertInString from "./insertInString";
 import isUppercase from "./isUppercase";
-import removeCharactersFromPosition from "./removeCharactersFromPosition";
+import { underscore } from "discord.js";
 
-const ENDING_PUNCTUATION = [".", "?", "!"];
+export const enum UnsureType {
+	UnsureAboutArticle = "*Nu pot determina corectura care se potrivește cel mai bine în acest context.",
+	RareWordUsage = "*Există și o corectură alternativă pentru această secvență, dar nu este la fel de uzuală.",
+}
 
-export interface CorrectionInfo {
+export interface WholeMessageCorrectionInfo {
 	originalText: string;
 	correctText: string;
 	strikedText: string;
-	correctionsMade: number;
+	correctionsMade: {
+		correctionSource: Correction;
+		correctedWith: string[];
+		unsure?: UnsureType;
+	}[];
 }
 
-export default (originalText: string): CorrectionInfo => {
+export default (originalText: string): WholeMessageCorrectionInfo => {
 	const originalCasual = casualSpeech(originalText);
 
-	let strikedText = originalText;
-	let correctText = originalText;
-	let correctionsMade = 0;
+	let finalStrikedText = originalText;
+	let finalCorrectedText = originalText;
+	let finalCorrectionsMade: WholeMessageCorrectionInfo["correctionsMade"] =
+		[];
 
 	let found;
 	while ((found = ALL_CORRECTIONS_REGEX.exec(originalCasual))) {
 		const { index } = found;
-		const { wrongSequence, previousSymbols, endSymbols } = found.groups!;
-		let correctSequence = CORRECTIONS[wrongSequence];
-		if (!correctSequence) continue;
+		const {
+			wrongSequence: wrongSequenceCasual,
+			previousSymbols,
+			endSymbols,
+		} = found.groups!;
+		let correctionObj = ALL_CORRECTIONS_CASUAL_KEYS[wrongSequenceCasual];
+		if (!correctionObj) continue;
 
 		const startIndex = index + previousSymbols.length;
-		const wrongEndIndex = startIndex + wrongSequence.length;
+		const wrongEndIndex = startIndex + wrongSequenceCasual.length;
+
+		const wrongSequenceInOriginalText = originalText.slice(
+			startIndex,
+			wrongEndIndex
+		);
 
 		const isAtStartOfSentence =
 			previousSymbols === "" ||
-			ENDING_PUNCTUATION.some((punctuation) =>
+			SENTENCE_ENDING_CHARACTERS.some((punctuation) =>
 				previousSymbols.includes(punctuation)
 			);
-		if (isAtStartOfSentence)
-			correctSequence = capitalizeFirst(correctSequence);
-		const isScreaming = isUppercase(
-			originalText.slice(startIndex, wrongEndIndex)
+		const isScreaming = isUppercase(wrongSequenceInOriginalText);
+
+		const strikedOffset = finalStrikedText.length - originalText.length;
+		finalStrikedText = insertInString(
+			finalStrikedText,
+			startIndex + strikedOffset,
+			"~~"
 		);
-		if (isScreaming) correctSequence = correctSequence.toUpperCase();
+		finalStrikedText = insertInString(
+			finalStrikedText,
+			wrongEndIndex + strikedOffset + 2,
+			"~~"
+		);
+		const correctionOffset =
+			finalCorrectedText.length - originalText.length;
 
-		{
-			const strikedOffset = strikedText.length - originalText.length;
-			strikedText = insertInString(
-				strikedText,
-				startIndex + strikedOffset,
-				"~~"
-			);
-			strikedText = insertInString(
-				strikedText,
-				wrongEndIndex + strikedOffset + 2,
-				"~~"
-			);
-		}
-		{
-			const correctOffset = correctText.length - originalText.length;
-			correctText = removeCharactersFromPosition(
-				correctText,
-				startIndex + correctOffset,
-				wrongSequence.length
-			);
-			correctText = insertInString(
-				correctText,
-				startIndex + correctOffset,
-				correctSequence
-			);
+		let unsure: UnsureType | undefined;
+		let applicableCorrections = [...correctionObj.correctForms];
+		switch (correctionObj.correctionKind) {
+			case CorrectionKind.SubstantivFeminin: {
+				let isCertainlyIndefiniteArticle: boolean | undefined;
+
+				// Detect " o <wrongSequence>", "(o <wrongSequence>", etc
+				if (
+					originalCasual[startIndex - 1] === " " &&
+					originalCasual[startIndex - 2] === "o" &&
+					(originalCasual[startIndex - 3] === undefined ||
+						PUNCTUATION_CHARACTERS.includes(
+							originalCasual[startIndex - 3]
+						))
+				)
+					isCertainlyIndefiniteArticle = true;
+				if (wrongSequenceInOriginalText.toLowerCase().endsWith("ă"))
+					isCertainlyIndefiniteArticle = true;
+
+				let wordRoot = applicableCorrections[0]!;
+				wordRoot = wordRoot.slice(0, wordRoot.length - 1);
+				let indefiniteVersion = wordRoot + "ă";
+				let definiteVersion = wordRoot + "a";
+
+				if (isCertainlyIndefiniteArticle)
+					applicableCorrections = [indefiniteVersion];
+				else {
+					applicableCorrections = [
+						definiteVersion,
+						indefiniteVersion,
+					];
+					unsure = UnsureType.UnsureAboutArticle;
+				}
+
+				break;
+			}
+			case CorrectionKind.RareAlternative: {
+				unsure = UnsureType.RareWordUsage;
+
+				break;
+			}
 		}
 
-		correctionsMade++;
 		ALL_CORRECTIONS_REGEX.lastIndex -= endSymbols.length;
+
+		if (
+			applicableCorrections.includes(
+				wrongSequenceInOriginalText.toLowerCase()
+			)
+		)
+			continue;
+
+		const replaceWrongSequenceWithThis = applicableCorrections
+			.map((seq) => {
+				if (isAtStartOfSentence) return capitalizeFirst(seq);
+				if (isScreaming) return seq.toUpperCase();
+				return seq;
+			})
+			.map(underscore)[0];
+		// .join("/");
+
+		finalCorrectedText = removeCharactersFromPosition(
+			finalCorrectedText,
+			startIndex + correctionOffset,
+			wrongSequenceCasual.length
+		);
+		finalCorrectedText = insertInString(
+			finalCorrectedText,
+			startIndex + correctionOffset,
+			replaceWrongSequenceWithThis
+		);
+
+		finalCorrectionsMade.push({
+			correctionSource: correctionObj,
+			correctedWith: applicableCorrections,
+			unsure: unsure,
+		});
 	}
 
 	ALL_CORRECTIONS_REGEX.lastIndex = 0;
 
 	return {
 		originalText,
-		correctText,
-		strikedText,
-		correctionsMade,
+		correctText: finalCorrectedText,
+		strikedText: finalStrikedText,
+		correctionsMade: finalCorrectionsMade,
 	};
 };
