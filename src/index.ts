@@ -12,7 +12,10 @@ import {
 	GatewayIntentBits,
 } from "discord.js";
 import normalizeVerb from "./normalizeVerb";
-import { CONJUGATION_CACHE, fetchConjugation } from "./conjugationScraper";
+import {
+	CONJUGATION_CACHE,
+	fetchConjugation,
+} from "./scrapers/conjugationScraper";
 import makeVerbMessage from "./makeVerbMessage";
 import correctText, { CorrectionInfo } from "./correctText";
 import casualSpeech from "./casualSpeech";

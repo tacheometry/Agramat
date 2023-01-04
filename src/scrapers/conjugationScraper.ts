@@ -1,7 +1,7 @@
-import normalizeVerb from "./normalizeVerb";
+import normalizeVerb from "../normalizeVerb";
 import axios from "axios";
 import { Element, load } from "cheerio";
-import capitalizeFirst from "./capitalizeFirst";
+import capitalizeFirst from "../capitalizeFirst";
 
 export type ConjugationInfo = [string, string[]][];
 
