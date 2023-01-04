@@ -91,7 +91,7 @@ client.on(Events.MessageCreate, (message) => {
 		if (c.unsure) includeUnsureWarnings.add(c.unsure);
 
 		const text = `${c.correctionSource.wrongForm} ➔ ${romanianEnumeration(
-			c.correctionSource.correctForms
+			c.correctedWith
 		)}${c.unsure ? "*" : ""}`;
 		correctionsChangesList[text] ??= 0;
 		correctionsChangesList[text]!++;
