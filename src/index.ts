@@ -35,16 +35,34 @@ enum INTERACTION_CUSTOM_ID {
 	CORRECTION_ACKNOWLEDGE = "correction_acknowledge",
 }
 
-const CORRECTION_CACHE: Record<string, WholeMessageCorrectionInfo> = {};
+let cachedMessageCorrection: (content: string) => WholeMessageCorrectionInfo;
+{
+	const CORRECTION_TTL = 30 * 60 * 1000; // Delete from correction cache after 30 min (can actually be up to double the duration sometimes)
+	const correctionCache = new Map<string, WholeMessageCorrectionInfo>();
+	const correctionsShouldBeClearedAt = new Map<string, number>();
 
-const cachedMessageCorrection = (content: string) => {
-	if (CORRECTION_CACHE[content]) return CORRECTION_CACHE[content];
+	cachedMessageCorrection = (content: string) => {
+		correctionsShouldBeClearedAt.set(content, Date.now() + CORRECTION_TTL);
+		if (correctionCache.has(content)) return correctionCache.get(content)!;
 
-	const correctionInfo = correctText(content);
-	CORRECTION_CACHE[content] = correctionInfo;
+		const correctionInfo = correctText(content);
+		correctionCache.set(content, correctionInfo);
 
-	return correctionInfo;
-};
+		const correctionCheckFunction = () => {
+			const clearAt = correctionsShouldBeClearedAt.get(content);
+			if (!clearAt) return;
+			if (clearAt > Date.now()) {
+				setTimeout(correctionCheckFunction, CORRECTION_TTL);
+				return;
+			}
+			correctionCache.delete(content);
+			correctionsShouldBeClearedAt.delete(content);
+		};
+		setTimeout(correctionCheckFunction, CORRECTION_TTL);
+
+		return correctionInfo;
+	};
+}
 
 client.once(Events.ClientReady, (c) => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
