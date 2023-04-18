@@ -37,6 +37,15 @@ enum INTERACTION_CUSTOM_ID {
 
 const CORRECTION_CACHE: Record<string, WholeMessageCorrectionInfo> = {};
 
+const cachedMessageCorrection = (content: string) => {
+	if (CORRECTION_CACHE[content]) return CORRECTION_CACHE[content];
+
+	const correctionInfo = correctText(content);
+	CORRECTION_CACHE[content] = correctionInfo;
+
+	return correctionInfo;
+};
+
 client.once(Events.ClientReady, (c) => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
 
@@ -51,11 +60,7 @@ client.on(Events.MessageCreate, (message) => {
 
 	const { content } = message;
 
-	let correctionInfo = CORRECTION_CACHE[content];
-	if (!correctionInfo) {
-		correctionInfo = correctText(content);
-		CORRECTION_CACHE[content] = correctionInfo;
-	}
+	let correctionInfo = cachedMessageCorrection(content);
 	if (correctionInfo.correctionsMade.length === 0) return;
 
 	const justOneCorrection = correctionInfo.correctionsMade.length === 1;
