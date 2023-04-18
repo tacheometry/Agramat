@@ -10,6 +10,7 @@ import {
 	EmbedBuilder,
 	Events,
 	GatewayIntentBits,
+	Partials,
 	StringSelectMenuBuilder,
 	StringSelectMenuOptionBuilder,
 } from "discord.js";
@@ -34,8 +35,10 @@ const client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.DirectMessages,
 		GatewayIntentBits.MessageContent,
 	],
+	partials: [Partials.Channel],
 });
 
 enum INTERACTION_CUSTOM_ID {
