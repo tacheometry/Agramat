@@ -48,7 +48,7 @@ enum NOTIFICATION_PREFERENCE {
 	IN_CHANNEL = "channel",
 	NEVER = "never",
 }
-const DEFAULT_NOTIFICATION_PREFERENCE = NOTIFICATION_PREFERENCE.IN_CHANNEL;
+const DEFAULT_NOTIFICATION_PREFERENCE = NOTIFICATION_PREFERENCE.IN_DM;
 
 let cachedMessageCorrection: (content: string) => WholeMessageCorrectionInfo;
 {
