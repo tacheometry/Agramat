@@ -19,6 +19,11 @@ const COMMAND_DEFINITIONS = [
 		.setDescription(
 			"Citește despre atitudinea, și limitările robotului față de corecturi în mediul online."
 		),
+	new SlashCommandBuilder()
+		.setName("configurare")
+		.setDescription(
+			"Configurează cum (sau dacă) vrei să te notific despre corecturi."
+		),
 ];
 
 const rest = new REST({ version: "10" }).setToken(

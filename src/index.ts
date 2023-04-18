@@ -10,6 +10,8 @@ import {
 	EmbedBuilder,
 	Events,
 	GatewayIntentBits,
+	StringSelectMenuBuilder,
+	StringSelectMenuOptionBuilder,
 } from "discord.js";
 import normalizeVerb from "./normalizeVerb";
 import {
@@ -22,6 +24,11 @@ import correctText, {
 	WholeMessageCorrectionInfo,
 } from "./correctText";
 import romanianEnumeration from "./romanianEnumeration";
+import Keyv from "keyv";
+
+const notificationPreferenceDb = new Keyv(process.env.DB_URL, {
+	namespace: "notification_preference",
+});
 
 const client = new Client({
 	intents: [
@@ -33,7 +40,15 @@ const client = new Client({
 
 enum INTERACTION_CUSTOM_ID {
 	CORRECTION_ACKNOWLEDGE = "correction_acknowledge",
+	NOTIFICATION_PREFERENCES = "notification_preferences",
 }
+
+enum NOTIFICATION_PREFERENCE {
+	IN_DM = "dm",
+	IN_CHANNEL = "channel",
+	NEVER = "never",
+}
+const DEFAULT_NOTIFICATION_PREFERENCE = NOTIFICATION_PREFERENCE.IN_CHANNEL;
 
 let cachedMessageCorrection: (content: string) => WholeMessageCorrectionInfo;
 {
@@ -73,8 +88,13 @@ client.once(Events.ClientReady, (c) => {
 	});
 });
 
-client.on(Events.MessageCreate, (message) => {
+client.on(Events.MessageCreate, async (message) => {
 	if (message.author.bot) return;
+
+	const authorNotificationPreference =
+		(await notificationPreferenceDb.get(message.author.id)) ??
+		DEFAULT_NOTIFICATION_PREFERENCE;
+	if (authorNotificationPreference === NOTIFICATION_PREFERENCE.NEVER) return;
 
 	const { content } = message;
 
@@ -91,7 +111,13 @@ client.on(Events.MessageCreate, (message) => {
 					message.author.id
 			)
 			.setLabel("Am înțeles")
-			.setStyle(ButtonStyle.Primary)
+			.setEmoji("✅")
+			.setStyle(ButtonStyle.Primary),
+		new ButtonBuilder()
+			.setCustomId(INTERACTION_CUSTOM_ID.NOTIFICATION_PREFERENCES)
+			.setLabel("Notificări")
+			.setEmoji("⚙️")
+			.setStyle(ButtonStyle.Secondary)
 	);
 
 	const embed = new EmbedBuilder()
@@ -135,13 +161,23 @@ client.on(Events.MessageCreate, (message) => {
 			text: [...includeUnsureWarnings.values()].join("\n"),
 		});
 
-	message.reply({
-		content: `Psst🗯️Am găsit ${
-			justOneCorrection ? "o greșeală" : "mai multe greșeli"
-		} în mesajul tău! Vezi dacă am dreptate:`,
+	let replyContent = "Psst🗯️Am găsit ";
+	replyContent += justOneCorrection ? "o greșeală" : "mai multe greșeli";
+	replyContent += " în mesajul tău";
+	if (authorNotificationPreference === NOTIFICATION_PREFERENCE.IN_DM)
+		replyContent += ` (${message.url})`;
+	replyContent += "! Vezi dacă am dreptate:";
+
+	const replyData = {
+		content: replyContent,
 		embeds: [embed],
 		components: [row as never],
-	});
+	};
+
+	if (authorNotificationPreference === NOTIFICATION_PREFERENCE.IN_CHANNEL)
+		message.reply(replyData);
+	// Catching in case the user has DMs off
+	else message.author.send(replyData).catch(() => {});
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -165,6 +201,59 @@ client.on(Events.InteractionCreate, async (interaction) => {
 			});
 			interaction.message.delete();
 		}
+	}
+
+	if (
+		(interaction.isCommand() &&
+			interaction.commandName === "configurare") ||
+		(interaction.isButton() &&
+			interaction.customId ===
+				INTERACTION_CUSTOM_ID.NOTIFICATION_PREFERENCES)
+	) {
+		const currentPreference =
+			(await notificationPreferenceDb.get(interaction.user.id)) ??
+			DEFAULT_NOTIFICATION_PREFERENCE;
+
+		const row = new ActionRowBuilder().addComponents(
+			new StringSelectMenuBuilder()
+				.setCustomId(INTERACTION_CUSTOM_ID.NOTIFICATION_PREFERENCES)
+				.addOptions(
+					new StringSelectMenuOptionBuilder()
+						.setLabel("În mesajele directe")
+						.setDescription(
+							"Te voi notifica prin mesaje private (DM)."
+						)
+						.setValue(NOTIFICATION_PREFERENCE.IN_DM)
+						.setDefault(
+							currentPreference === NOTIFICATION_PREFERENCE.IN_DM
+						),
+					new StringSelectMenuOptionBuilder()
+						.setLabel("În același canal")
+						.setDescription(
+							"Te voi notifica în același canal în care ai trimis mesajul."
+						)
+						.setValue(NOTIFICATION_PREFERENCE.IN_CHANNEL)
+						.setDefault(
+							currentPreference ===
+								NOTIFICATION_PREFERENCE.IN_CHANNEL
+						),
+					new StringSelectMenuOptionBuilder()
+						.setLabel("Deloc")
+						.setDescription("Nu te voi notifica niciodată.")
+						.setValue(NOTIFICATION_PREFERENCE.NEVER)
+						.setDefault(
+							currentPreference === NOTIFICATION_PREFERENCE.NEVER
+						)
+				)
+		);
+
+		interaction.reply({
+			ephemeral: true,
+			content:
+				"Alege cum vrei să te notific dacă găsesc o greșeală în mesajele tale:",
+			components: [row as never],
+		});
+		return;
 	}
 
 	if (interaction.isCommand()) {
@@ -215,6 +304,25 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 				break;
 			}
+		}
+	}
+
+	if (interaction.isStringSelectMenu()) {
+		if (
+			interaction.customId ===
+			INTERACTION_CUSTOM_ID.NOTIFICATION_PREFERENCES
+		) {
+			const newPreference = interaction.values[0];
+
+			await notificationPreferenceDb.set(
+				interaction.user.id,
+				newPreference
+			);
+
+			interaction.reply({
+				ephemeral: true,
+				content: "Ți-am salvat preferințele.",
+			});
 		}
 	}
 });
