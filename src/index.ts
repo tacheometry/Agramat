@@ -167,7 +167,10 @@ client.on(Events.MessageCreate, async (message) => {
 	let replyContent = "Psst🗯️Am găsit ";
 	replyContent += justOneCorrection ? "o greșeală" : "mai multe greșeli";
 	replyContent += " în mesajul tău";
-	if (authorNotificationPreference === NOTIFICATION_PREFERENCE.IN_DM)
+	if (
+		authorNotificationPreference === NOTIFICATION_PREFERENCE.IN_DM &&
+		message.channel.id !== message.author.dmChannel?.id
+	)
 		replyContent += ` (${message.url})`;
 	replyContent += "! Vezi dacă am dreptate:";
 
