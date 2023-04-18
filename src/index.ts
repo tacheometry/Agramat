@@ -50,12 +50,11 @@ client.on(Events.MessageCreate, (message) => {
 	if (message.author.bot) return;
 
 	const { content } = message;
-	const lowerContent = content.toLowerCase();
 
-	let correctionInfo = CORRECTION_CACHE[lowerContent];
+	let correctionInfo = CORRECTION_CACHE[content];
 	if (!correctionInfo) {
 		correctionInfo = correctText(content);
-		CORRECTION_CACHE[lowerContent] = correctionInfo;
+		CORRECTION_CACHE[content] = correctionInfo;
 	}
 	if (correctionInfo.correctionsMade.length === 0) return;
 
