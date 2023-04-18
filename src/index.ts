@@ -138,7 +138,7 @@ client.on(Events.MessageCreate, (message) => {
 	message.reply({
 		content: `Psst🗯️Am găsit ${
 			justOneCorrection ? "o greșeală" : "mai multe greșeli"
-		} în textul tău! Vezi dacă am dreptate:`,
+		} în mesajul tău! Vezi dacă am dreptate:`,
 		embeds: [embed],
 		components: [row as never],
 	});
