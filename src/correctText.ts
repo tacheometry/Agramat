@@ -83,9 +83,9 @@ export default (originalText: string): WholeMessageCorrectionInfo => {
 			case CorrectionKind.SubstantivFeminin: {
 				let isCertainlyIndefiniteArticle: boolean | undefined;
 
-				// Detect " o <wrongSequence>", "(o <wrongSequence>", etc
+				// Detect " o <wrongSequence>", "(o <wrongSequence>", "-o <wrongSequence>" etc
 				if (
-					originalCasual[startIndex - 1] === " " &&
+					(originalCasual[startIndex - 1] === " " || originalCasual[startIndex - 1] === "-") &&
 					originalCasual[startIndex - 2] === "o" &&
 					(originalCasual[startIndex - 3] === undefined ||
 						PUNCTUATION_CHARACTERS.includes(
