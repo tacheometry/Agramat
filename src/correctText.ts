@@ -85,12 +85,12 @@ export default (originalText: string): WholeMessageCorrectionInfo => {
 
 				// Detect " o <wrongSequence>", "(o <wrongSequence>", "-o <wrongSequence>" etc
 				if (
-					(originalCasual[startIndex - 1] === " " || originalCasual[startIndex - 1] === "-") &&
+					originalCasual[startIndex - 1] === " " &&
 					originalCasual[startIndex - 2] === "o" &&
 					(originalCasual[startIndex - 3] === undefined ||
 						PUNCTUATION_CHARACTERS.includes(
 							originalCasual[startIndex - 3]
-						))
+						) || originalCasual[startIndex - 3] === "-")
 				)
 					isCertainlyIndefiniteArticle = true;
 				if (wrongSequenceInOriginalText.toLowerCase().endsWith("ă"))
